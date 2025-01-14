@@ -1219,6 +1219,22 @@ a {
   cursor: pointer;
 }
 
+.cloud-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cloud-icon img {
+  width: 20px;
+  height: 20px;
+}
+
+.username-display {
+  font-size: 14px;
+  color: white;
+}
+
 @keyframes pulse {
   0% {
     transform: scale(0.95);

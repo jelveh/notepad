@@ -88,6 +88,47 @@ there's a small donate button in the About section.
 	const { notepad, state, setState, removeState, get } = selector();
 	const optimalLineLengthPadding = '15px 15vw 40px';
 
+	// Check if already logged in on page load
+	if (puter.auth.isSignedIn()) {
+		puter.auth.getUser().then(user => {
+			$('.username-display').text(user.username);
+			$('#cloudSync').find('img').attr('src', 'img/navbar/cloud-check.svg');
+			
+			// Load existing notes
+			puter.kv.get('notepad_content').then(content => {
+				if (content) {
+					notepad.note.val(content);
+				}
+			});
+		});
+	}
+
+	// Cloud sync functionality
+	$('#cloudSync').on('click', async function() {
+		try {
+			if (!puter.auth.isSignedIn()) {
+				await puter.auth.signIn();
+				const user = await puter.auth.getUser();
+				$('.username-display').text(user.username);
+				$(this).find('img').attr('src', 'img/navbar/cloud-check.svg');
+				
+				// Load notes from cloud after login
+				const cloudContent = await puter.kv.get('notepad_content');
+				if (cloudContent) {
+					notepad.note.val(cloudContent);
+				}
+			}
+
+			// Save current notes to cloud
+			await puter.kv.set('notepad_content', notepad.note.val());
+			showToast('Notes saved to cloud');
+
+		} catch (error) {
+			console.error('Cloud sync error:', error);
+			showToast('Failed to sync notes');
+		}
+	});
+
 	const editorConfig = {
 		defaultFontSize: 18,
 		defaultLineHeight: 26,
@@ -196,6 +237,18 @@ there's a small donate button in the About section.
 		const characterAndWordCountText = calculateCharactersAndWords(get(this).val());
 		notepad.wordCount.text(characterAndWordCountText);
 		setState('note', get(this).val());
+
+		// Add cloud autosave if user is logged in
+		if (puter.auth.isSignedIn()) {
+			puter.kv.set('notepad_content', get(this).val())
+				.then(() => {
+					$('#cloudSync').find('img').attr('src', 'img/navbar/cloud-check.svg');
+				})
+				.catch(err => {
+					console.error('Cloud autosave failed:', err);
+					$('#cloudSync').find('img').attr('src', 'img/navbar/cloud-error.svg');
+				});
+		}
 	}, 500));
 
 	notepad.clearNotes.on('click', function () {
